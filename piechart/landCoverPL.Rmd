@@ -1,15 +1,32 @@
-# -- we are r --
-require("ggplot2")
-library("dplyr")
+---
+title: "Wykresy kołowe i słupkowe"
+author:
+- name: Tomasz Przechlewski
+  email: t.plata-przechlewski@psw.kwidzyn.edu.pl
+  affiliation: Powiślańska Szkoła Wyższa (Kwidzyn/Poland)
+description: (c) Tomasz Przechlewski / CC-BY license
+date: "2022-12-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+library("ggplot2")
 library("RColorBrewer")
 library("ggpubr")
-library("tidyverse")
-library("tidyr")
 
-# kolorki definicje
+# kolorki definicje:
 mycols <- c( '#e6550d', '#636363', '#31a354', '#e5f5e0', 
              '#3182bd', '#feb24c', '#ffffb3', '#005a32', '#543005')
 
+```
+
+## Przykład 1: gminy wg Polsce wg typów (źródło BDL)
+
+Wykres słupkowy
+
+```{r}
 ## Majpierw coś prostszego
 ## Gminy wg typów (za BDL/GUS)
 g <- read.csv("gminy-typy.csv", sep = ';', 
@@ -26,7 +43,11 @@ p.1 <- g %>% filter (Nazwa == "POLSKA") %>%
   geom_text(aes(label=sprintf ("%i", value)), hjust=1.2, color="black", size=3.0) +
   theme(legend.position="none")
 p.1
+```
 
+Wykres kołowy
+
+```{r}
 ## PC.1: wykres kołowy
 pc.1 <- g %>% filter (Nazwa == "POLSKA") %>% 
   #arrange(desc(type)) %>%
@@ -43,7 +64,12 @@ pc.1 <- g %>% filter (Nazwa == "POLSKA") %>%
   theme_void()
 
 pc.1
+```
 
+Porównanie dla trzech województw, wychodzą krótkie nóżki wykresów kołowych
+
+
+```{r}
 ### Porówanie: 3 województwa
 
 p.2 <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
@@ -62,7 +88,10 @@ p.2 <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
     hjust=1.2, color="black", size=3.0) +
   theme(legend.position="top")
 p.2
+```
 
+
+```{r}
 p.3 <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
   ggplot(aes(x = type, y=value, fill=Nazwa, group=Nazwa )) +
   geom_bar(stat="identity",  position="stack") +
@@ -79,7 +108,9 @@ p.3 <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
     hjust=1.2, color="black", size=3.0) +
   theme(legend.position="top")
 p.3
+```
 
+```{r}
 ## (Multi) Pie chart
 ## Faceted pie-chart with text
 pc.3.x <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
@@ -99,15 +130,22 @@ pc.3.x <- g %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %
   facet_wrap(~Nazwa)
 
 pc.3.x
+```
 
+
+```{r}
 ## pie
 pc.3 <- pc.3.x + coord_polar("y", start = 0) +
   theme(legend.position = "bottom")
 pc.3
+```
 
-######################## PRZYKŁAD 2 ######################################
-## Wykorzystanie powierzchni kraju w % ogółem
-##
+
+## Przykład 2: Wykorzystanie powierzchni kraju w % ogółem (źródło BDL)
+
+Wykres słupkowy
+
+```{r}
 d <- read.csv("PODZ_2780_CREL_20221218071042.csv", sep = ';', 
               dec = ".",  header=T, na.string="NA") %>%
   select (Nazwa, type=Kierunki.wykorzystania.powierzchni, unit=Jednostka.miary,
@@ -116,19 +154,22 @@ d <- read.csv("PODZ_2780_CREL_20221218071042.csv", sep = ';',
       value = as.numeric(value)) %>%
   filter (! grepl('ogółem', type))
 
-
 p.1 <- d %>% filter (Nazwa == "POLSKA") %>% 
   ggplot(aes(x = reorder(type, value), y=value )) +
   geom_bar(stat="identity", fill='forestgreen') +
   xlab(label="") + ylab(label="% ") +
   scale_y_continuous(name="?", limits=c(0, 60)) +
-  coord_flip()+
-  ggtitle("Wykorzystanie powierzchni w wybranych województwach (%)") +
+  coord_flip()+ ggtitle(sprintf ("Share of land use %s", "PL")) +
+  ggtitle("Wykorzystanie powierzchni kraju w % ogółem") +
   theme(plot.title = element_text(hjust = 0.5)) +
   geom_text(aes(label=sprintf ("%.1f", value)), hjust=-.08, color="black", size=3.0) +
   theme(legend.position="none")
 p.1
+```
 
+Wykres kołowy od razu do kitu
+
+```{r}
 pc.1 <- d %>% filter (Nazwa == "POLSKA") %>% 
   arrange(desc(type)) %>%
   mutate(yy.value = value/sum(value)*100) %>%
@@ -136,24 +177,29 @@ pc.1 <- d %>% filter (Nazwa == "POLSKA") %>%
   geom_bar(width = 1, stat = "identity", color = "white") +
   coord_polar("y", start = 0)+
   scale_fill_manual(values = mycols) +
-  ggtitle("Wykorzystanie powierzchni w wybranych województwach (%)") +
+  ggtitle("Wykorzystanie powierzchni kraju w % ogółem") +
   geom_text(aes(label = value), position = position_stack(vjust=0.5)) +
   theme_void()
 
 pc.1
+```
 
+Słupki dla trzech województw
 
+```{r}
 p.2 <- d %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
   ggplot(aes(x = reorder(type, value), y=value, fill=Nazwa )) +
   geom_bar(stat="identity",  position="dodge") +
   xlab(label="") + ylab(label="% ") +
-  coord_flip()+
+  coord_flip()+ 
   ggtitle("Wykorzystanie powierzchni w wybranych województwach (%)") +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(legend.position="none")
   
 p.2
+```
 
+```{r}
 p.3 <- d %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
   ggplot(aes(x = reorder(Nazwa, value), y=value, fill=type )) +
   geom_bar(stat="identity",  position="stack") +
@@ -164,8 +210,9 @@ p.3 <- d %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
   theme(legend.position="bottom")
 
 p.3
+```
 
-
+```{r}
 pc.3.x <- d %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %>%
   group_by(Nazwa) %>%
   mutate(yy.value = value /sum (value) * 100)  %>%
@@ -178,11 +225,17 @@ pc.3.x <- d %>% filter (Nazwa %in% c("POMORSKIE", "MAZOWIECKIE", "ŚLĄSKIE")) %
   facet_wrap(~Nazwa)
 
 pc.3.x
+```
 
+Kołowy do kitu potrójnie
+
+
+```{r}
 ## pie
 pc.3 <- pc.3.x + coord_polar("y", start = 0) +
   theme(legend.position = "bottom")
 pc.3
+```
 
 ## koniec
 
